@@ -13,6 +13,28 @@ You are encouraged to contribute by:
 
 ## Getting Started
 
+### Cloning the repository
+
+To get started, make sure you have Git installed and configured and then clone the repository
+
+```bash
+# Configure your Git username and email if you haven't already
+git config --global user.name "Your Name"
+git config --global user.email your.name@institution.com
+
+# Clone the repository
+git clone https://github.com/bios2/biodiversity_modelling_2025.git
+```
+
+### Working with the repository
+
+You can work with the repository in your preferred R environment, such as RStudio, JupyterLab or vscode, or directly in R :
+
+```bash
+cd biodiversity_modelling_2025
+R
+```
+
 ### Installation Instructions for local machine
 
 ```r

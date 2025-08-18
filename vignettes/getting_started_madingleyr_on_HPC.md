@@ -9,23 +9,27 @@ Before diving in, read these to understand the system you’re on:
 * [Alliance – Using modules](https://docs.alliancecan.ca/wiki/Using_modules)
 * [Alliance – Running jobs with Slurm](https://docs.alliancecan.ca/wiki/Running_jobs)
 <!-- R -->
-* [Alliance – Using R on Cedar](https://docs.alliancecan.ca/wiki/Using_R_on_Cedar)
+* [Alliance – Using R on Cedar](https://docs.alliancecan.ca/wiki/R)
 
 **Key points**:
 
 * **Login nodes**: Where you connect, prepare work and launch jobs (don’t run heavy work here!).
 * **Compute nodes**: Where your jobs actually run, through Slurm - `sbatch`.
 * **Shared storage**: `$HOME`, `$PROJECT`, and `$SCRATCH` are available on all nodes.
+* **R dependencies**: Use modules to load R, install packages from the login node in your `$HOME` or `$PROJECT` directories, and make them available to your jobs by setting the R library path.
 
 
-## 2. Create working folders
+## 2. Clone the repository and set up directories
 
 This guide assumes usage of `$HOME` for simplicity. However, consider using `$PROJECT` for running simulations for better performance and sharing.
 
 SSH into Cedar and run:
 
 ```bash
-mkdir -p $HOME/biodiversity_modelling_2025/{scripts,r-lib}
+cd $HOME
+git clone https://github.com/bios2/biodiversity_modelling_2025.git
+cd biodiversity_modelling_2025
+
 mkdir -p $SCRATCH/madingley_out
 ```
 
@@ -59,6 +63,8 @@ module load r/4.4.0 gcc gdal udunits
 Set the R library path to your `$HOME` space so jobs can find them:
 
 ```bash
+mkdir -p $HOME/biodiversity_modelling_2025/r-lib
+
 echo 'R_LIBS_USER="'"$HOME/biodiversity_modelling_2025/r-lib"'"' >> ~/.Renviron
 ```
 
