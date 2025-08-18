@@ -1,6 +1,6 @@
-# 🐟 MadingleyR on Cedar – Quick Start Guide
+# MadingleyR on Alliance HPC – Quick Start Guide
 
-## 1. Understand the Cedar HPC environment
+## 1. Understand the HPC environment
 
 Before diving in, read these to understand the system you’re on:
 
@@ -9,7 +9,7 @@ Before diving in, read these to understand the system you’re on:
 * [Alliance – Using modules](https://docs.alliancecan.ca/wiki/Using_modules)
 * [Alliance – Running jobs with Slurm](https://docs.alliancecan.ca/wiki/Running_jobs)
 <!-- R -->
-* [Alliance – Using R on Cedar](https://docs.alliancecan.ca/wiki/R)
+* [Alliance – Using R on Alliance HPC](https://docs.alliancecan.ca/wiki/R)
 
 **Key points**:
 
@@ -23,7 +23,7 @@ Before diving in, read these to understand the system you’re on:
 
 This guide assumes usage of `$HOME` for simplicity. However, consider using `$PROJECT` for running simulations for better performance and sharing.
 
-SSH into Cedar and run:
+SSH into Cedar (or other hpc cluster) and run:
 
 ```bash
 cd $HOME
@@ -40,7 +40,7 @@ mkdir -p $SCRATCH/madingley_out
 
 ## 3. Load R and dependencies
 
-Modules are how you load software on Cedar.
+Modules are how you load software on Alliance HPC clusters.
 
 Check what’s available:
 
