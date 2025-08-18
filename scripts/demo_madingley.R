@@ -1,9 +1,9 @@
-# This scripts runs a Madingley simulation with default parameters and inputs over Canada
+# This scripts runs a Madingley simulation with default parameters and inputs over Vancouver
 
 library(MadingleyR)
 
-# Region of interest
-spatial_window <- c(-141, -52, 41, 83) # Canada
+# Region of interest : Single 1 degree grid cell over Vancouver
+spatial_window <- c(-124, -123, 49, 50)
 
 out_dir <- file.path(Sys.getenv("SCRATCH"), "biodiversity_modelling_2025_out")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)

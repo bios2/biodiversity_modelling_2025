@@ -102,8 +102,8 @@ Save this as:
 ```r
 library(MadingleyR)
 
-# Region of interest
-spatial_window <- c(-141, -52, 41, 83) # Canada
+# Region of interest : Single 1 degree grid cell over Vancouver
+spatial_window <- c(-124, -123, 49, 50)
 
 out_dir <- file.path(Sys.getenv("SCRATCH"), "biodiversity_modelling_2025_out")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
@@ -127,7 +127,7 @@ Save this as:
 #SBATCH --job-name=demo_madingley
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=4G
+#SBATCH --mem=8G
 #SBATCH --output=%x-%j.out
 #SBATCH --account=def-sponsor00   # Replace with your allocation
 
@@ -141,7 +141,7 @@ Rscript "$HOME/biodiversity_modelling_2025/scripts/demo_madingley.R"
 
 ## 8. Submit your job
 
-From Cedar login node:
+From login node:
 
 ```bash
 cd $HOME/biodiversity_modelling_2025/scripts
@@ -160,7 +160,11 @@ squeue -u $USER
 When the job is finished:
 
 ```bash
-ls $SCRATCH/madingley_out
+# List past Slurm jobs
+sacct -u $USER
+
+# List output files
+ls $SCRATCH/biodiversity_modelling_2025_out
 ```
 
 You should see:
