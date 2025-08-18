@@ -17,16 +17,13 @@ It is a work in progress, where you (the participants) are encouraged to contrib
 
 ```r
 # Install the packages for package development
-install.packages("devtools")
-install.packages("roxygen2")
-install.packages("testthat")
-install.packages("usethis")
+install.packages(c("devtools", "roxygen2", "testthat", "usethis"))
 
 # Install shiny package if you haven't already
 install.packages("shiny")
 
-# Install the dependencies for madingleyR
-# Read vignettes/madingleyr_on_hpc.Rmd for instructions on how to install the dependencies on an HPC such as cedar
+# Install madingleyR
+# Read vignettes\getting_started_madingleyr_on_HPC.md for instructions on how to install the dependencies on an HPC such as cedar
 
 install.packages(c("remotes","data.table","terra","sf"))
 library(remotes)
