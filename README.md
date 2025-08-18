@@ -1,15 +1,15 @@
-## Introduction
+# BIOS2 Biodiversity Modelling 2025 Summer School collaboration repository
 
-This repository provides resources and scripts for the biodiversity modelling 2025 summer school, with a focus on using the Madingley model.
+This repository provides resources and scripts for the Biodiversity Modelling 2025 summer school, with a focus on using the Madingley model. 🌍
 
-This repository's purpose is to facilitate collaboration and learning among students participating in the biodiversity modelling 2025 summer school. It provides a structured environment for running simulations, analyzing data, and sharing code.
+The purpose is to facilitate collaboration and learning among students: run simulations, analyse results, and share reusable code. This is a living project — contributions are welcome! 🤝
 
-It is a work in progress, where you (the participants) are encouraged to contribute by:
-- Adding reusable functions to the `R/` folder.
-- Packaging the project as an R package for better organization and sharing.
-- Creating a Shiny app in the `app/` folder to visualize simulation outputs.
-- Writing vignettes in the `vignettes/` folder to document your work, share collaboration guidelines, etc.
-- Create simulation scripts using the madingleyR package in the `scripts/` folder.
+You are encouraged to contribute by:
+- 🧩 Adding reusable functions to the `R/` folder.
+- 📦 Packaging the project as an R package for better organization and sharing.
+- 🎛️ Creating a Shiny app in the `app/` folder to visualise simulation outputs.
+- 📝 Writing vignettes in the `vignettes/` folder to document workflows and collaboration guidelines.
+- ▶️ Creating simulation scripts using the `MadingleyR` package in the `scripts/` folder.
 
 ## Getting Started
 
