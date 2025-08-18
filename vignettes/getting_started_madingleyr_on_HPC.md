@@ -161,7 +161,7 @@ ls $SCRATCH/madingley_out
 
 You should see:
 
-* `case1_results.rds` → the simulation output
+* `demo_results.rds` → the simulation output
 * Any additional plots or data files
 
 
