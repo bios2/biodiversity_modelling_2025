@@ -52,7 +52,9 @@ module spider gdal proj geos
 Then load them (adjust version if newer):
 
 ```bash
-module load r/4.4.0 gcc gdal udunits
+module load r/4.4.0
+module load udunits/2.2.28
+module load gdal/3.9.1
 ```
 
 📖 [Alliance – Using modules](https://docs.alliancecan.ca/wiki/Using_modules)
@@ -127,8 +129,9 @@ Save this as:
 #SBATCH --account=def-your_account   # Replace with your allocation
 
 # Load necessary modules
-module load StdEnv/2023
-module load r/4.4.0 gdal
+module load r/4.4.0
+module load udunits/2.2.28
+module load gdal/3.9.1
 
 # Run the Madingley case study script
 Rscript "$HOME/biodiversity_modelling_2025/scripts/demo_madingley.R"
