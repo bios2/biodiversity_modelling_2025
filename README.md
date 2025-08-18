@@ -37,23 +37,14 @@ R
 
 ### Installation Instructions for local machine
 
+Follow the instructions in the `vignettes/installing_madingleyR.md` file to install the `madingleyR` package and its dependencies on your local machine. This is essential for running biodiversity simulations using the Madingley model in R.
+
 ```r
 # Install the packages for package development
 install.packages(c("devtools", "roxygen2", "testthat", "usethis"))
 
 # Install shiny package if you haven't already
 install.packages("shiny")
-
-# Install madingleyR
-# Read vignettes\getting_started_madingleyr_on_HPC.md for instructions on how to install the dependencies on an HPC such as cedar
-
-install.packages(c("remotes","data.table","terra","sf"))
-library(remotes)
-install_github("MadingleyR/MadingleyR", subdir="Package", build_vignettes=FALSE)
-
-# Load the package and check the version
-library(MadingleyR)
-madingley_version()
 ```
 
 ### Run the demo simulation

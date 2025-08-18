@@ -4,24 +4,23 @@
 
 Before diving in, read these to understand the system you’re on:
 
-* [Alliance – Using Cedar](https://docs.alliancecan.ca/wiki/Cedar)
-* [Alliance – Filesystem and storage (\$HOME, \$PROJECT, \$SCRATCH)](https://docs.alliancecan.ca/wiki/Storage_and_file_management)
+* [Alliance – Using Fir](https://docs.alliancecan.ca/wiki/Fir)
+* [Alliance – Filesystem and storage (Home, Scratch, Project)](https://docs.alliancecan.ca/wiki/Storage_and_file_management)
 * [Alliance – Using modules](https://docs.alliancecan.ca/wiki/Using_modules)
 * [Alliance – Running jobs with Slurm](https://docs.alliancecan.ca/wiki/Running_jobs)
-<!-- R -->
 * [Alliance – Using R on Alliance HPC](https://docs.alliancecan.ca/wiki/R)
 
 **Key points**:
 
 * **Login nodes**: Where you connect, prepare work and launch jobs (don’t run heavy work here!).
 * **Compute nodes**: Where your jobs actually run, through Slurm - `sbatch`.
-* **Shared storage**: `$HOME`, `$PROJECT`, and `$SCRATCH` are available on all nodes.
-* **R dependencies**: Use modules to load R, install packages from the login node in your `$HOME` or `$PROJECT` directories, and make them available to your jobs by setting the R library path.
+* **Shared storage**: `Home`, `Project`, and `Scratch` are available on all nodes.
+* **R dependencies**: Use modules to load R, install packages from the login node in your `home` or `project` directories, and make them available to your jobs by setting the R library path.
 
 
 ## 2. Clone the repository and set up directories
 
-This guide assumes usage of `$HOME` for simplicity. However, consider using `$PROJECT` for running simulations for better performance and sharing.
+This guide assumes usage of `Home` for simplicity. However, consider using a `Project` folder for running simulations for better performance and sharing.
 
 SSH into Cedar (or other hpc cluster) and run:
 
@@ -30,12 +29,12 @@ cd $HOME
 git clone https://github.com/bios2/biodiversity_modelling_2025.git
 cd biodiversity_modelling_2025
 
-mkdir -p $SCRATCH/madingley_out
+mkdir -p $SCRATCH/biodiversity_modelling_2025_out
 ```
 
 * **\$HOME** → for personal scripts and R packages (persistent)
-* **\$PROJECT** → for shared R packages & code (shared, persistent, performant)
 * **\$SCRATCH** → for simulation output (large files, temporary)
+* **\project\...** → for shared R packages & code (shared, persistent, performant)
 
 
 ## 3. Load R and dependencies
@@ -62,6 +61,8 @@ module load gdal/3.9.1
 
 ## 4. Tell R where to install your packages
 
+> **Important**: This step is not required when using the training cluster for the summer school, as it is already set up.
+
 Set the R library path to your `$HOME` space so jobs can find them:
 
 ```bash
@@ -72,6 +73,8 @@ echo 'R_LIBS_USER="'"$HOME/biodiversity_modelling_2025/r-lib"'"' >> ~/.Renviron
 
 
 ## 5. Install MadingleyR
+
+> **Important**: This step is not required when using the training cluster for the summer school, as it is already set up.
 
 Do this **on the login node** (internet is blocked on compute nodes):
 
@@ -102,7 +105,7 @@ library(MadingleyR)
 # Region of interest
 spatial_window <- c(-141, -52, 41, 83) # Canada
 
-out_dir <- file.path(Sys.getenv("SCRATCH"), "madingley_out")
+out_dir <- file.path(Sys.getenv("SCRATCH"), "biodiversity_modelling_2025_out")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 mdata <- madingley_init(spatial_window = spatial_window)
@@ -124,14 +127,12 @@ Save this as:
 #SBATCH --job-name=demo_madingley
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
+#SBATCH --mem=4G
 #SBATCH --output=%x-%j.out
-#SBATCH --account=def-your_account   # Replace with your allocation
+#SBATCH --account=def-sponsor00   # Replace with your allocation
 
 # Load necessary modules
-module load r/4.4.0
-module load udunits/2.2.28
-module load gdal/3.9.1
+module load r/4.5.0 udunits/2.2.28 gdal/3.9.1
 
 # Run the Madingley case study script
 Rscript "$HOME/biodiversity_modelling_2025/scripts/demo_madingley.R"
@@ -143,8 +144,8 @@ Rscript "$HOME/biodiversity_modelling_2025/scripts/demo_madingley.R"
 From Cedar login node:
 
 ```bash
-cd $PROJECT/madingley/code
-sbatch run_case1.sbatch
+cd $HOME/biodiversity_modelling_2025/scripts
+sbatch demo_madingley.sbatch
 ```
 
 Check job status:
