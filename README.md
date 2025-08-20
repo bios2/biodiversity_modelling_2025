@@ -57,3 +57,7 @@ source("scripts/demo_madingley.R")
 # or run the demo script directly
 # Rscript scripts/demo_madingley.R
 ```
+
+### Important readings
+- [Source code][ Process raster data for madingley model](https://github.com/CNeu-hub/Madingley_CC_LU)
+- [Paper][Model-based impact analysis of climate change and land-use intensification on trophic networks](https://nsojournals.onlinelibrary.wiley.com/doi/full/10.1111/ecog.07533)
