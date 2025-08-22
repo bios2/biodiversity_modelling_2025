@@ -58,6 +58,45 @@ source("scripts/demo_madingley.R")
 # Rscript scripts/demo_madingley.R
 ```
 
+## Modifying the Madingley R code
+Prerequisites: pull the latest version of the repository to ensure you have the most recent changes. Or a specific branch you want to work on.
+First make sure you have this project installed, otherwise clone it.
+
+Then uninstall your current version of the package:
+
+```r 
+  try(detach("package:MadingleyR", unload = TRUE))
+  try(remove.packages("MadingleyR"))
+```
+
+Then reinstall the package from the local source code:
+
+```r
+library(remotes)
+remotes::install_github(
+  "bios2/biodiversity_modelling_2025",
+  subdir = "MadingleyR-master/Package",
+  build_vignettes = TRUE
+)
+
+#You can also get the pacakge from a specific branch like so
+remotes::install_github(
+  "bios2/biodiversity_modelling_2025@my-branch-name",
+  subdir = "MadingleyR-master/Package",
+  build_vignettes = TRUE
+)
+```
+
+You will now have the latest version of the madingleyR from the Bios2 workshop
+
+Now if you want to modify a part of the package, you need to go inside the folder where you have the `biodiversity_modelling_2025` repository and edit the files in the `MadingleyR-master/Package/R/` folder. 
+
+After making changes, you need to reload your library:
+```r
+devtools::load_all("YOUR_PATH/biodiversity_modelling_2025/MadingleyR-master/Package")
+
+```
+
 ### Important readings
 - [Source code][ Process raster data for madingley model](https://github.com/CNeu-hub/Madingley_CC_LU)
 - [Paper][Model-based impact analysis of climate change and land-use intensification on trophic networks](https://nsojournals.onlinelibrary.wiley.com/doi/full/10.1111/ecog.07533)
