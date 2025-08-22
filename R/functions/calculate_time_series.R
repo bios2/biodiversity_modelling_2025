@@ -7,8 +7,8 @@ library(data.table)
 ## Output - dataframe of summary statistics for each functional group, binned by body size, for each month of simulation
 
 
-calculate_time_series <- function(out_dir, size_bin_resolution){
-  filepath = paste(out_dir, "/cohort_properties", sep="")
+calculate_time_series <- function(output_name, size_bin_resolution){
+  filepath = paste(tempdir(), "/", output_name, "/cohort_properties", sep="")
   
   ## Get files of cohort data per month and put into a list of dataframes
   cohortFileNamesRaw <- list.files(path = filepath)
