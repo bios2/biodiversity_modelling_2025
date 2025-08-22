@@ -84,12 +84,7 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
   }
   # Reorganize data to calculate Relative Abundance (by biomass) in each cell
   data <- cohort_data[,c("GridcellIndex","FunctionalGroupIndex",
-                         "Biomass", "SizeClass", "Month")] %>%
-    
-    # Group similar functional groups
-    group_by(SizeClass, FunctionalGroupIndex, GridcellIndex, Month) %>%
-    summarise(RealBiomass = sum(Biomass)) %>%
-    ungroup() %>%
+                         "RealBiomass", "SizeClass", "Month")] %>%
     
     # Add new column with relative abundance
     group_by(GridcellIndex) %>%
@@ -110,7 +105,6 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
       #Loop running through every cohort
       for(j in nrow(filtered_data)){
         p <- filtered_data$RelativeAbundance[j]
-        print(p)
         diversity <- diversity + p*log(p)
       }
       diversity <- -diversity
@@ -130,3 +124,4 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
   
   return(df)
 }
+
