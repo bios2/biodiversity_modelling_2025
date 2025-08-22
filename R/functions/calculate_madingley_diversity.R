@@ -127,4 +127,6 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
     df <- rbind(df,Resultats[[k]])
   }
   df <- as.data.frame(df[-1,])
+  
+  return(df)
 }
