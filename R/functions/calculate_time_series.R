@@ -7,8 +7,8 @@ library(data.table)
 ## Output - dataframe of summary statistics for each functional group, binned by body size, for each month of simulation
 
 
-calculate_time_series <- function(file_path, size_bin_resolution){
-  filepath = paste(file_path, "/cohort_properties", sep="")
+calculate_time_series <- function(out_dir, size_bin_resolution){
+  filepath = paste(out_dir, "/cohort_properties", sep="")
   
   ## Get files of cohort data per month and put into a list of dataframes
   cohortFileNamesRaw <- list.files(path = filepath)
@@ -29,13 +29,15 @@ calculate_time_series <- function(file_path, size_bin_resolution){
       select(GridcellIndex, FunctionalGroupIndex, IndividualBodyMass, CohortAbundance, TrophicIndex) %>%
       mutate(SizeClass = cut(IndividualBodyMass,
                               breaks = logspace(n = size_bin_resolution), #arbitrary number of bins
-                              labels = as.character(c(1:(size_bin_resolution-1))))
+                              labels = as.character(c(1:(size_bin_resolution-1)))),
+             Biomass = IndividualBodyMass*CohortAbundance
       ) %>%
       mutate(SizeClass = as.factor(SizeClass),
              GridcellIndex = as.factor(GridcellIndex),
              FunctionalGroupIndex = as.factor(FunctionalGroupIndex)) %>%
       dplyr::group_by(GridcellIndex, FunctionalGroupIndex, SizeClass) %>%
-      dplyr::summarise(GroupAbundance = sum(CohortAbundance)) %>% 
+      dplyr::summarise(GroupAbundance = sum(CohortAbundance),
+                       RealBiomass = sum(Biomass)) %>% 
       dplyr::ungroup()
   })
   

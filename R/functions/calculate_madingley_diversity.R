@@ -31,7 +31,7 @@ logspace <- function(a = 10e-8, b = 10e5, n) {
 # Output : Dataframe with community diversity in each grid cell
 
 # Dependancies : 'tidyverse' library, 'madingleyR library' logspace handmade function
-calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
+calculate_madingley_diversity <- function(cohort_data,
                                           functional_group = NULL){
   #Filter for specified functional group
   if(!is.null(functional_group)){
@@ -84,22 +84,10 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
   }
   # Reorganize data to calculate Relative Abundance (by biomass) in each cell
   data <- cohort_data[,c("GridcellIndex","FunctionalGroupIndex",
-                         "CohortAbundance","IndividualBodyMass")] %>%
-    #Calculate Biomass
-    mutate(Biomass = CohortAbundance*IndividualBodyMass) %>%
-    
-    #Bin data into size classes
-    mutate(SizeClass = cut(IndividualBodyMass, 
-                           breaks = logspace(n = size_bin_resolution),
-                           labels = as.character(c(1:(size_bin_resolution - 1)))
-    )) %>%
-    # Group similar functional groups
-    group_by(SizeClass, FunctionalGroupIndex, GridcellIndex) %>%
-    summarise(RealBiomass = sum(Biomass)) %>%
-    ungroup() %>%
+                         "RealBiomass", "SizeClass", "Month")] %>%
     
     # Add new column with relative abundance
-    group_by(GridcellIndex) %>%
+    group_by(GridcellIndex, Month) %>%
     mutate(RelativeAbundance = RealBiomass/sum(RealBiomass)) %>%
     ungroup()
   
@@ -126,6 +114,7 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
   
   #Output data in a dataframe
   df <- data.frame(GridcellIndex = unique(data$GridcellIndex),
+                   Month = unique(data$Month),
                    CommunityDiversity = ShannonDI)
   
   return(df)
