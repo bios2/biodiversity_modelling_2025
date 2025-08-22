@@ -84,17 +84,10 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
   }
   # Reorganize data to calculate Relative Abundance (by biomass) in each cell
   data <- cohort_data[,c("GridcellIndex","FunctionalGroupIndex",
-                         "CohortAbundance","IndividualBodyMass")] %>%
-    #Calculate Biomass
-    mutate(Biomass = CohortAbundance*IndividualBodyMass) %>%
+                         "Biomass", "SizeClass", "Month")] %>%
     
-    #Bin data into size classes
-    mutate(SizeClass = cut(IndividualBodyMass, 
-                           breaks = logspace(n = size_bin_resolution),
-                           labels = as.character(c(1:(size_bin_resolution - 1)))
-    )) %>%
     # Group similar functional groups
-    group_by(SizeClass, FunctionalGroupIndex, GridcellIndex) %>%
+    group_by(SizeClass, FunctionalGroupIndex, GridcellIndex, Month) %>%
     summarise(RealBiomass = sum(Biomass)) %>%
     ungroup() %>%
     
@@ -104,29 +97,36 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
     ungroup()
   
   # Calculate Shannon Diversity Index for each grid cell
-  ShannonDI <- c()
-  
+
   #Loop in each cell
-  for(i in unique(data$GridcellIndex)){
-    #Filter to have only the data per cell
-    filtered_data <- filter(data, GridcellIndex == i)
-    
-    #Calculate the index using loops
-    diversity <- 0
-    #Loop running through every cohort
-    for(j in nrow(filtered_data)){
-      p <- filtered_data$RelativeAbundance[j]
-      print(p)
-      diversity <- diversity + p*log(p)
+  Resultats <- list()
+  for(m in unique(data$Month)){
+    for(i in unique(data$GridcellIndex)){
+      #Filter to have only the data per cell
+      filtered_data <- filter(data, GridcellIndex == i, Month == m)
+      
+      #Calculate the index using loops
+      diversity <- 0
+      #Loop running through every cohort
+      for(j in nrow(filtered_data)){
+        p <- filtered_data$RelativeAbundance[j]
+        print(p)
+        diversity <- diversity + p*log(p)
+      }
+      diversity <- -diversity
+      
+      #Add the result to the container vector
+      Row <- c(m,i,diversity)
+      Resultats <- append(Resultats,Row)
     }
-    diversity <- -diversity
-    #Add the result to the container vector
-    ShannonDI <- append(ShannonDI, diversity)
   }
   
-  #Output data in a dataframe
-  df <- data.frame(GridcellIndex = unique(data$GridcellIndex),
-                   CommunityDiversity = ShannonDI)
+  #Build dataframe
+  df <- matrix(ncol = 3)
+  for(k in 1:length(Resultats)){
+    df <- rbind(df,Resultats[[k]])
+  }
+  df <- as.data.frame(df[-1,])
   
   return(df)
 }
