@@ -6,17 +6,6 @@
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#Step 0. Download dependencies
-rm(list=ls())
-
-#load relevant libraries for script
-pkgs <- c("tidyverse", "terra", "MadingleyR")
-#install.packages(pkgs)
-lapply(pkgs, library, character.only = TRUE)
-rm(pkgs)
-
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #Function
 #Requires: a madingley data input with spatial window, grid size, and 
 #Grid cell indices
@@ -27,7 +16,7 @@ assign_lat_lon <- function(x, spatial_window = NULL) {
     ncol <- (x$spatial_window[2] - x$spatial_window[1]) / x$grid_size
     nrow <- (x$spatial_window[4] - x$spatial_window[3]) / x$grid_size
     
-    lat_lon_output <- rast(
+    lat_lon_output <- terra::rast(
       nrows = nrow,
       ncols = ncol,
       xmin = x$spatial_window[1],
@@ -37,7 +26,7 @@ assign_lat_lon <- function(x, spatial_window = NULL) {
       crs = "EPSG:4326"
     )
     
-    coords <- as.data.frame(
+    coords <- terra::as.data.frame(
       terra::xyFromCell(lat_lon_output, c(unique(x$cohorts$GridcellIndex) + 1))
     )
     
@@ -64,7 +53,7 @@ assign_lat_lon <- function(x, spatial_window = NULL) {
     ncol <- round(sqrt(ncell * aspect_ratio))
     nrow <- ncell / ncol
     
-    lat_lon_output <- rast(
+    lat_lon_output <- terra::rast(
       nrows = nrow,
       ncols = ncol,
       xmin = spatial_window[1],
@@ -74,7 +63,7 @@ assign_lat_lon <- function(x, spatial_window = NULL) {
       crs = "EPSG:4326"
     )
     
-    coords <- as.data.frame(
+    coords <- terra::as.data.frame(
       terra::xyFromCell(lat_lon_output, c(unique(as.numeric(x$GridcellIndex))))
     )
     coords$y <- spatial_window[4] - (coords$y - spatial_window[3])
