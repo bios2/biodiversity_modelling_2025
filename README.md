@@ -59,9 +59,10 @@ source("scripts/demo_madingley.R")
 ```
 
 ## Modifying the Madingley R code
-You need to reinstall the package containing the source code.
 Prerequisites: pull the latest version of the repository to ensure you have the most recent changes. Or a specific branch you want to work on.
-First uninstall your current version of the package:
+First make sure you have this project installed, otherwise clone it.
+
+Then uninstall your current version of the package:
 
 ```r 
   try(detach("package:MadingleyR", unload = TRUE))
