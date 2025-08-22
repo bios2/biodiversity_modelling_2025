@@ -1,4 +1,4 @@
-madingley_run = function(out_dir=tempdir(),
+madingley_run_BIOS2 = function(out_dir=tempdir(),
                          madingley_data,
                          years=1,
                          cohort_def=0,
