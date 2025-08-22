@@ -8,7 +8,7 @@ library(data.table)
 
 
 calculate_time_series <- function(file_path, size_bin_resolution){
-  filepath = paste("file_path", "/cohort_properties", sep="")
+  filepath = paste(file_path, "/cohort_properties", sep="")
   
   ## Get files of cohort data per month and put into a list of dataframes
   cohortFileNamesRaw <- list.files(path = filepath)
@@ -34,9 +34,9 @@ calculate_time_series <- function(file_path, size_bin_resolution){
       mutate(SizeClass = as.factor(SizeClass),
              GridcellIndex = as.factor(GridcellIndex),
              FunctionalGroupIndex = as.factor(FunctionalGroupIndex)) %>%
-      group_by(GridcellIndex, FunctionalGroupIndex, SizeClass) %>%
-      summarise(GroupAbundance = sum(CohortAbundance)) %>% 
-      ungroup()
+      dplyr::group_by(GridcellIndex, FunctionalGroupIndex, SizeClass) %>%
+      dplyr::summarise(GroupAbundance = sum(CohortAbundance)) %>% 
+      dplyr::ungroup()
   })
   
   # puts a column in each dataframe with the month - !assumes files are in order, which they are by default!
