@@ -84,12 +84,7 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
   }
   # Reorganize data to calculate Relative Abundance (by biomass) in each cell
   data <- cohort_data[,c("GridcellIndex","FunctionalGroupIndex",
-                         "Biomass", "SizeClass", "Month")] %>%
-    
-    # Group similar functional groups
-    group_by(SizeClass, FunctionalGroupIndex, GridcellIndex, Month) %>%
-    summarise(RealBiomass = sum(Biomass)) %>%
-    ungroup() %>%
+                         "RealBiomass", "SizeClass", "Month")] %>%
     
     # Add new column with relative abundance
     group_by(GridcellIndex) %>%
@@ -99,7 +94,7 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
   # Calculate Shannon Diversity Index for each grid cell
 
   #Loop in each cell
-  Resultats <- list()
+  Resultats <- data.frame(matrix(ncol = 3))
   for(m in unique(data$Month)){
     for(i in unique(data$GridcellIndex)){
       #Filter to have only the data per cell
@@ -110,23 +105,19 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
       #Loop running through every cohort
       for(j in nrow(filtered_data)){
         p <- filtered_data$RelativeAbundance[j]
-        print(p)
         diversity <- diversity + p*log(p)
       }
       diversity <- -diversity
       
       #Add the result to the container vector
       Row <- c(m,i,diversity)
-      Resultats <- append(Resultats,Row)
+      Resultats <- rbind(Resultats,Row)
     }
   }
   
-  #Build dataframe
-  df <- matrix(ncol = 3)
-  for(k in 1:length(Resultats)){
-    df <- rbind(df,Resultats[[k]])
-  }
-  df <- as.data.frame(df[-1,])
+  #Clean dataframe
+  df <- Resultats[-1,]
+  colnames(df) <- c("Month", "GridcellIndex", "DiversityIndex")
   
   return(df)
 }
