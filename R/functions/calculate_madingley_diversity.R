@@ -31,7 +31,7 @@ logspace <- function(a = 10e-8, b = 10e5, n) {
 # Output : Dataframe with community diversity in each grid cell
 
 # Dependancies : 'tidyverse' library, 'madingleyR library' logspace handmade function
-calculate_madingley_diversity <- function(cohort_data,
+calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
                                           functional_group = NULL){
   #Filter for specified functional group
   if(!is.null(functional_group)){
@@ -84,38 +84,47 @@ calculate_madingley_diversity <- function(cohort_data,
   }
   # Reorganize data to calculate Relative Abundance (by biomass) in each cell
   data <- cohort_data[,c("GridcellIndex","FunctionalGroupIndex",
-                         "RealBiomass", "SizeClass", "Month")] %>%
+                         "Biomass", "SizeClass", "Month")] %>%
+    
+    # Group similar functional groups
+    group_by(SizeClass, FunctionalGroupIndex, GridcellIndex, Month) %>%
+    summarise(RealBiomass = sum(Biomass)) %>%
+    ungroup() %>%
     
     # Add new column with relative abundance
-    group_by(GridcellIndex, Month) %>%
+    group_by(GridcellIndex) %>%
     mutate(RelativeAbundance = RealBiomass/sum(RealBiomass)) %>%
     ungroup()
   
   # Calculate Shannon Diversity Index for each grid cell
-  ShannonDI <- c()
-  
+
   #Loop in each cell
-  for(i in unique(data$GridcellIndex)){
-    #Filter to have only the data per cell
-    filtered_data <- filter(data, GridcellIndex == i)
-    
-    #Calculate the index using loops
-    diversity <- 0
-    #Loop running through every cohort
-    for(j in nrow(filtered_data)){
-      p <- filtered_data$RelativeAbundance[j]
-      print(p)
-      diversity <- diversity + p*log(p)
+  Resultats <- list()
+  for(m in unique(data$Month)){
+    for(i in unique(data$GridcellIndex)){
+      #Filter to have only the data per cell
+      filtered_data <- filter(data, GridcellIndex == i, Month == m)
+      
+      #Calculate the index using loops
+      diversity <- 0
+      #Loop running through every cohort
+      for(j in nrow(filtered_data)){
+        p <- filtered_data$RelativeAbundance[j]
+        print(p)
+        diversity <- diversity + p*log(p)
+      }
+      diversity <- -diversity
+      
+      #Add the result to the container vector
+      Row <- c(m,i,diversity)
+      Resultats <- append(Resultats,Row)
     }
-    diversity <- -diversity
-    #Add the result to the container vector
-    ShannonDI <- append(ShannonDI, diversity)
   }
   
-  #Output data in a dataframe
-  df <- data.frame(GridcellIndex = unique(data$GridcellIndex),
-                   Month = unique(data$Month),
-                   CommunityDiversity = ShannonDI)
-  
-  return(df)
+  #Build dataframe
+  df <- matrix(ncol = 3)
+  for(k in 1:length(Resultats)){
+    df <- rbind(df,Resultats[[k]])
+  }
+  df <- as.data.frame(df[-1,])
 }
