@@ -6,17 +6,6 @@
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#Step 0. Download dependencies
-rm(list=ls())
-
-#load relevant libraries for script
-pkgs <- c("tidyverse", "terra", "MadingleyR")
-#install.packages(pkgs)
-lapply(pkgs, library, character.only = TRUE)
-rm(pkgs)
-
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #Function
 #Requires: a madingley data input with spatial window, grid size, and 
 #Grid cell indices
