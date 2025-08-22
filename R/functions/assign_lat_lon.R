@@ -41,6 +41,9 @@ assign_lat_lon <- function(x, spatial_window = NULL) {
       terra::xyFromCell(lat_lon_output, c(unique(x$cohorts$GridcellIndex) + 1))
     )
     
+    coords$y <- x$spatial_window[4] - (coords$y - x$spatial_window[3])
+    
+    
     coords_with_IDs <- cbind(coords, GridcellIndex = unique(x$cohorts$GridcellIndex))
     colnames(coords_with_IDs) <- c("lon", "lat", "GridcellIndex")
     
@@ -74,6 +77,7 @@ assign_lat_lon <- function(x, spatial_window = NULL) {
     coords <- as.data.frame(
       terra::xyFromCell(lat_lon_output, c(unique(as.numeric(x$GridcellIndex))))
     )
+    coords$y <- spatial_window[4] - (coords$y - spatial_window[3])
     
     coords_with_IDs <- cbind(coords, GridcellIndex = unique(x$GridcellIndex))
     colnames(coords_with_IDs) <- c("lon", "lat", "GridcellIndex")
