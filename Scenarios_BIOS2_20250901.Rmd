@@ -1,0 +1,157 @@
+---
+title: "Scenario_BiodivChanges"
+author: "Alexis Brouillette, Karen Sanchez, Michel Landry, Simran Bains, Wenhuan"
+date: "2025-09-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Basic run
+
+The model is initialized without any change to the input parameter, but the spatial window (North America).
+
+```{r input_params, echo=TRUE}
+library(terra)
+library(MadingleyR)
+spatial_window= c(-180,-50,5,85)
+plot_spatialwindow(spatial_window)
+chrt_def = madingley_inputs("cohort definition")
+stck_def = madingley_inputs("stock definition")
+mdl_prms = madingley_inputs("model parameters")
+mdata = madingley_init(spatial_window = spatial_window,cohort_def = chrt_def,stock_def=stck_def,spatial_inputs=sptl_inp,max_cohort = 100)
+```
+
+Then, we run the model for an *initial period* of **100 years** and a *max cohort size* of **100** to let it stabilize before the scenarios
+
+```{r first_run, echo=TRUE}
+mdata2 = madingley_run(madingley_data=mdata,years=100, cohort_def=chrt_def,stock_def=stck_def,spatial_inputs = sptl_inp,model_parameters =  mdl_prms,max_cohort = 100)
+```
+
+From this point, we use this initial run to implement our different scenarios.
+
+## Create a reference scenario
+
+To compare the results, we let the model run for the same amount of time the scenarios would run (ADD NUMBER AFTER NORMALIZING SCENARIOS)
+
+```{r scen_ref, echo=TRUE}
+mdata3 = madingley_run(madingley_data=mdata2,years=50, cohort_def=chrt_def,spatial_inputs = sptl_inp)
+```
+
+## Scenario: Climate change
+
+The first scenario looks into the impacts of projected climate change on biodiversity. The input data were gathered from CHELSA CMIP6 (SSP585, 2050s) climate inputs (tmax/tmin → tmean) and aggregated from 30″ to 1° for MadingleyR compatibility. Datas were resampled to a **monthly** *temporal resolution*, and a *spatial resolution* of **1 degree**. This resulted in (NUMBER), 12 per year from 2041 and 2070.
+
+```{r scen_climatechange, echo=TRUE}
+# Credit: Wenhuan
+# ------------ A) 先降到 1° 再 stack 12 层 Tmean ----------------
+base_dir <- "/Users/wenhuan/Documents/Climate Data/CHELSA ssp585 2050s"
+out_dir  <- file.path(base_dir, "madingley_out_ssp585_2050s")
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+
+# 目标 1° 网格
+template1deg <- rast(xmin=-180, xmax=180, ymin=-90, ymax=90,
+                     resolution=1, crs="EPSG:4326")
+
+# 找某月文件（严格匹配 _MM_2041_2070_norm.tif）
+find_month <- function(mm, var=c("tasmax","tasmin"),
+                       dir=base_dir, period="2041_2070") {
+  var <- match.arg(var)
+  patt <- sprintf("%s_%s_%s_norm\\.tif$", var, mm, period)
+  f <- list.files(dir, pattern=patt, full.names=TRUE, recursive=FALSE)
+  if (length(f) != 1)
+    stop(sprintf("期望找到 1 个 %s_%s 文件，但找到 %d 个", var, mm, length(f)))
+  f
+}
+
+# 单位修正（通常 CHELSA 为 °C，此处做保护性判断）
+fix_units <- function(r){
+  gm <- as.numeric(global(r, "mean", na.rm=TRUE))
+  if (!is.na(gm) && gm > 200) r <- r - 273.15        # Kelvin -> °C
+  if (!is.na(gm) && gm > 70 && gm < 200) r <- r/10   # 乘10的°C -> °C
+  r
+}
+
+# 从 30″ -> 1° 的聚合：温度用均值
+to_1deg <- function(r, target=template1deg){
+  fact <- round(1 / res(r)[1])         # ~120 对 30″
+  r_agg <- aggregate(r, fact=fact, fun=mean, na.rm=TRUE)
+  resample(r_agg, target, method="bilinear")
+}
+
+tmean_1deg_list <- vector("list", 12)
+
+for (m in 1:12) {
+  mm <- sprintf("%02d", m)
+  fmax <- find_month(mm, "tasmax")
+  fmin <- find_month(mm, "tasmin")
+  
+  rmax <- fix_units(rast(fmax))
+  rmin <- fix_units(rast(fmin))
+  
+  # 先各自降到 1°
+  rmax_1d <- to_1deg(rmax)
+  rmin_1d <- to_1deg(rmin)
+  
+  # 再算该月的 Tmean
+  tmean_1deg_list[[m]] <- (rmax_1d + rmin_1d) / 2
+}
+
+tmean_1deg_stack <- rast(tmean_1deg_list)
+names(tmean_1deg_stack) <- sprintf("near_surface_temperature_%02d", 1:12)
+
+# 写出（可选）
+for (m in 1:12) {
+  writeRaster(tmean_1deg_stack[[m]],
+              file.path(out_dir, sprintf("near-surface_temperature_%02d.tif", m)),
+              overwrite=TRUE)
+}
+writeRaster(tmean_1deg_stack,
+            file.path(out_dir, "near-surface_temperature_1-12.tif"),
+            overwrite=TRUE)
+```
+
+## Scenario: HANPP
+
+To represent projected human impacts on biodiversity, we used the projected land-use under socio-climatic scenarios from Chen,Li&Liu (<https://www.nature.com/articles/s41597-022-01208-6>). We used datas from the SSP5_RCP85 to match the datasets of the Climate change scenarios (see above). The dataset represent land-use in **5 years** intervals, from **2020** to **2100**.
+
+Modifications were made to the dataset to make them MadingleyR-compliant. These were mostly done using QGIS 3.40.7, and only the resulting datas are provided for size reasons. \# A QGIS Model is available to fully batch-reproduce these changes Modifications: - Reprojection Make sure every raster is in the same projection (4326) - Clip raster to spatial window: From a mask layer representing the same spatial window, to reduce the size of the files for better handling. Could be skipped to use the same data worldwide. - Convert land-use data to HANPP Following (REFERENCE), we converted the land-use values to HANPP equivalent values.(VALIDATE MODEL, PROBABLY HAVE TO INVERT) Anthropic presence: 0.73 Agricultural land: 0.835 Natural habitat: 1 Everything else: 0 - Resample: The initial data used a 1km resolution, while everything else in MadingleyR used a 1 degree resolution. The dataset was resampled to 1 degree. - Fill the raster To prevent any issue, the output raster was formated to span across the whole world, filling the NULL datas with 0.
+
+```{r scen_hanpp, echo=TRUE}
+# Get Karen's code here
+```
+
+## Scenario: Remove large herbivores
+
+To represent extinction events, we removed certain cohorts. In this case, all the large herbivores were removed. We reproduced the tests made by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
+
+```{r scen_herbiv, echo=TRUE}
+# Get Simran's code here
+```
+
+## Scenario: Remove large carnivores
+
+To represent extinction events, we removed certain cohorts. In this case, all the large carnivores were removed. This test is inspired by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
+
+```{r scen_carniv, echo=TRUE}
+mdata_carni = mdata2
+
+remove_idx = which(mdata_carni$cohorts$AdultMass > 1e5 & mdata_carni$cohorts$FunctionalGroupIndex ==1)
+
+cohort_defs$PROPERTY_Maximum.mass[2] = 100000
+
+cohort_defs=madingley_inputs('cohort definition')
+```
+
+```{r run_scen_carniv, echo=FALSE}
+mdata4 = madingley_run(madingley_data = mdata_carni, years = 10, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(10,0,10,10))
+```
+
+```{r present_scen_carnic, echo=FALSE}
+par(mfrow = c(1, 2))
+plot_foodweb(mdata4, max_flows = 5)
+```
+
+## Scenario: Climate change+HANPP
