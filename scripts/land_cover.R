@@ -49,7 +49,7 @@ spatial_window <- as.vector(ext(sptl_inp$hanpp))
 
 #### Run spin-up ####
 # Initialise the model using the pre-loaded inputs
-mdata = madingley_init(spatial_window = spatial_window,
+mdata <- madingley_init(spatial_window = spatial_window,
                        cohort_def = chrt_def,
                        stock_def = stck_def,
                        spatial_inputs = sptl_inp,
