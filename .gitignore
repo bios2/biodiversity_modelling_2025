@@ -4,3 +4,6 @@
 .Rproj.user
 .Rhistory
 .DS_Store
+Data/hanpp_pct.tif
+Data/land_cover/land_cover_projection/raw/
+Data/land_cover/land_cover_historical/

@@ -2,11 +2,13 @@
 title: "Scenario_BiodivChanges"
 author: "Alexis Brouillette, Karen Sanchez, Michel Landry, Simran Bains, Wenhuan"
 date: "2025-09-02"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(eval = FALSE)
 ```
 
 ## Basic run
@@ -16,8 +18,9 @@ The model is initialized without any change to the input parameter, but the spat
 ```{r input_params, echo=TRUE}
 library(terra)
 library(MadingleyR)
-spatial_window= c(-180,-50,5,85)
+spatial_window= c(-170, -50, 12, 85)
 plot_spatialwindow(spatial_window)
+sptl_inp <- madingley_inputs("spatial inputs")
 chrt_def = madingley_inputs("cohort definition")
 stck_def = madingley_inputs("stock definition")
 mdl_prms = madingley_inputs("model parameters")
@@ -42,7 +45,7 @@ mdata3 = madingley_run(madingley_data=mdata2,years=50, cohort_def=chrt_def,spati
 
 ## Scenario: Climate change
 
-The first scenario looks into the impacts of projected climate change on biodiversity. The input data were gathered from CHELSA CMIP6 (SSP585, 2050s) climate inputs (tmax/tmin → tmean) and aggregated from 30″ to 1° for MadingleyR compatibility. Datas were resampled to a **monthly** *temporal resolution*, and a *spatial resolution* of **1 degree**. This resulted in (NUMBER), 12 per year from 2041 and 2070.
+The first scenario looks into the impacts of projected climate change on biodiversity. The input data were gathered from CHELSA CMIP6 (SSP585, 2050s) climate inputs (tmax/tmin → tmean) and aggregated from 30 to 1° for MadingleyR compatibility. Datas were resampled to a **monthly** *temporal resolution*, and a *spatial resolution* of **1 degree**. This resulted in (NUMBER), 12 per year from 2041 and 2070.
 
 ```{r scen_climatechange, echo=TRUE}
 # Credit: Wenhuan
@@ -115,9 +118,19 @@ writeRaster(tmean_1deg_stack,
 
 ## Scenario: HANPP
 
-To represent projected human impacts on biodiversity, we used the projected land-use under socio-climatic scenarios from Chen,Li&Liu (<https://www.nature.com/articles/s41597-022-01208-6>). We used datas from the SSP5_RCP85 to match the datasets of the Climate change scenarios (see above). The dataset represent land-use in **5 years** intervals, from **2020** to **2100**.
+To represent projected human impacts on biodiversity, we used the projected land-use under socio-climatic scenarios from Chen,Li&Liu (<https://www.nature.com/articles/s41597-022-01208-6>). We used data from the SSP5_RCP85 to match the datasets of the Climate change scenarios (see above). The dataset represent land-use in **5 years** intervals, from **2020** to **2100**.
 
-Modifications were made to the dataset to make them MadingleyR-compliant. These were mostly done using QGIS 3.40.7, and only the resulting datas are provided for size reasons. \# A QGIS Model is available to fully batch-reproduce these changes Modifications: - Reprojection Make sure every raster is in the same projection (4326) - Clip raster to spatial window: From a mask layer representing the same spatial window, to reduce the size of the files for better handling. Could be skipped to use the same data worldwide. - Convert land-use data to HANPP Following (REFERENCE), we converted the land-use values to HANPP equivalent values.(VALIDATE MODEL, PROBABLY HAVE TO INVERT) Anthropic presence: 0.73 Agricultural land: 0.835 Natural habitat: 1 Everything else: 0 - Resample: The initial data used a 1km resolution, while everything else in MadingleyR used a 1 degree resolution. The dataset was resampled to 1 degree. - Fill the raster To prevent any issue, the output raster was formated to span across the whole world, filling the NULL datas with 0.
+Modifications were made to the dataset to make them MadingleyR-compliant. These were mostly done using QGIS 3.40.7, and only the resulting datas are provided for size reasons. \# A QGIS Model is available to fully batch-reproduce these changes
+
+Modifications:
+
+-   Reprojection: Make sure every raster is in the same projection (4326)
+
+-   Clip raster to spatial window: From a mask layer representing the same spatial window, to reduce the size of the files for better handling. Could be skipped to use the same data worldwide.
+
+-   Convert land-use data to HANPP Following Haberl 2007 (<https://www.pnas.org/doi/epdf/10.1073/pnas.0704243104>), we converted the land-use values to HANPP equivalent values. Anthropic presence: 0.73 Agricultural land: 0.835 Natural habitat: 1 Everything else: 0 - Resample: The initial data used a 1km resolution, while everything else in MadingleyR used a 1 degree resolution. The dataset was resampled to 1 degree.
+
+-   Fill the raster To prevent any issue, the output raster was formated to span across the whole world, filling the NULL datas with 0.
 
 ```{r scen_hanpp, echo=TRUE}
 # Get Karen's code here
