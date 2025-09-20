@@ -8,7 +8,7 @@ library("tidyterra")
 set.seed(123)
 source("R/functions/utils_rasters.R")
 
-output_folder <- "~/Desktop/Madingley/output_test"
+output_folder <- "~/Desktop/Madingley/output_madingley_scenarios"
 spatial_window <- c(-170, -50, 15, 83)
 countries_list <- c("United States of America", 
                     "Canada", 

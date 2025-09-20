@@ -3,8 +3,8 @@ title: "Scenario_BiodivChanges"
 author: "Alexis Brouillette, Karen Sanchez, Michel Landry, Simran Bains, Wenhuan"
 date: "2025-09-02"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
   word_document: default
 ---
 
@@ -138,7 +138,7 @@ for(i in 1:length(r_hanpp_list)){
 
 ### 1) Initialize and spin-up
 
-To run the model we loaded the default MadingleyR inputs. We selected the North America region (Canada, United States and Mexico) and crop and masked all the spatial inputs to reduce the size of the files for better handling. We ran the model for an *spin-up* of **200 years** and a *max cohort size* of **100**.
+To run the model we loaded the default MadingleyR inputs. We selected the North America region (Canada, United States and Mexico) and crop and masked all the spatial inputs to reduce the size of the files for better handling. We ran the model for a *spin-up* of **200 years** and a *max cohort size* of **100**.
 
 ```{r run_spin_up, echo=TRUE}
 library("MadingleyR")
@@ -330,7 +330,7 @@ To represent extinction events, we removed certain cohorts. In this case, all th
 # Get Simran's code here
 ```
 
-## Scenario: Remove large carnivores
+### 5) Remove large carnivores
 
 To represent extinction events, we removed certain cohorts. In this case, all the large carnivores were removed. This test is inspired by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
 
@@ -352,3 +352,11 @@ mdata4 = madingley_run(madingley_data = mdata_carni, years = 10, spatial_inputs 
 par(mfrow = c(1, 2))
 plot_foodweb(mdata4, max_flows = 5)
 ```
+
+Future work
+
+-   Work with a smaller scale (the land cover data doesn't vary significantly each year since we aggregated it)
+
+-   Increase the mortality rate to run a scenario of biodiversity loss
+
+-   Cross the scenarios

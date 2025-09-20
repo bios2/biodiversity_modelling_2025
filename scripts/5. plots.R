@@ -3,12 +3,12 @@ library("terra")
 library("sf")
 library("rnaturalearth")
 library("tidyterra")
-source("R/functions/assign_lat_lon.R")
+# source("R/functions/assign_lat_lon.R")
 source("R/functions/utils_rasters.R")
 
-output_folder <- "~/Desktop/Madingley/output_test"
-rds_name <- "mdata_control.rds"
-scenario_name <- "control"
+output_folder <- "~/Desktop/Madingley/output_madingley_scenarios"
+rds_name <- "mdata_climate_scenario.rds"
+scenario_name <- "climate_scenario"
 
 mdata_sc_path <- file.path(output_folder,rds_name)
 mdata_sc <- readRDS(mdata_sc_path)

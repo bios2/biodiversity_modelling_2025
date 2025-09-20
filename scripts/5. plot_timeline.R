@@ -3,18 +3,18 @@ library("terra")
 library("sf")
 library("rnaturalearth")
 library("tidyterra")
-source("R/functions/assign_lat_lon.R")
+# source("R/functions/assign_lat_lon.R")
 source("R/functions/utils_rasters.R")
 
-output_folder <- "~/Desktop/Madingley/output_test"
-scenario_name <- "climate"
+output_folder <- "~/Desktop/Madingley/output_madingley_scenarios"
 rds_name <- "mdata_climate_scenario.rds"
+scenario_name <- "climate_scenario"
 
 files <- file.path(output_folder,rds_name)
 # For a list of files
 # files <- list.files(
-#   path = output_folder, 
-#   pattern = "^global_SSP5_RCP85.*\\.rds$", 
+#   path = output_folder,
+#   pattern = "^global_SSP5_RCP85.*\\.rds$",
 #   full.names = TRUE
 # )
 
@@ -96,7 +96,7 @@ ggplot(data=Biomass_total, aes(x=Month/12))+
   theme(legend.text = element_text(size=10),legend.title = element_text(size=10,face="bold")) +
   theme(legend.position = "bottom") 
 # Save to file
-ggsave(paste0(output_folder, "/biomass_timeline.png"),
+ggsave(paste0(output_folder, "/biomass_timeline",scenario_name,".png"),
        width = 15, height = 4, dpi = 300)
 
 
