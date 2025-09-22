@@ -353,9 +353,9 @@ par(mfrow = c(1, 2))
 plot_foodweb(mdata4, max_flows = 5)
 ```
 
-Future work
+### Future work
 
--   Work with a smaller scale (the land cover data doesn't vary significantly each year since we aggregated it)
+-   Work with a smaller scale (the land cover data doesn't vary significantly each year when we aggregated it)
 
 -   Increase the mortality rate to run a scenario of biodiversity loss
 
