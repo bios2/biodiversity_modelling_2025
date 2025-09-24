@@ -1,0 +1,362 @@
+---
+title: "Scenario_BiodivChanges"
+author: "Alexis Brouillette, Karen Sanchez, Michel Landry, Simran Bains, Wenhuan"
+date: "2025-09-02"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+## Preprocess inputs
+
+### Preprocess climate data
+
+The first scenario looks into the impacts of projected climate change on biodiversity. The input data were gathered from CHELSA CMIP6 (SSP585, 2050s) climate inputs (tmax/tmin → tmean) and aggregated from 30° to 1° for MadingleyR compatibility. Data was resampled to a **monthly** *temporal resolution*, and a *spatial resolution* of **1 degree**. This resulted in (NUMBER), 12 per year from 2041 and 2070.
+
+```{r preprocess_climate, echo=TRUE}
+# Credit: Wenhuan
+# ------------ A) 1° stack 12 Tmean ----------------
+base_dir <- "/Users/wenhuan/Documents/Climate Data/CHELSA ssp585 2050s"
+out_dir  <- file.path(base_dir, "madingley_out_ssp585_2050s")
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+
+# 1°
+template1deg <- rast(xmin=-180, xmax=180, ymin=-90, ymax=90,
+                     resolution=1, crs="EPSG:4326")
+
+# _MM_2041_2070_norm.tif
+find_month <- function(mm, var=c("tasmax","tasmin"),
+                       dir=base_dir, period="2041_2070") {
+  var <- match.arg(var)
+  patt <- sprintf("%s_%s_%s_norm\\.tif$", var, mm, period)
+  f <- list.files(dir, pattern=patt, full.names=TRUE, recursive=FALSE)
+  if (length(f) != 1)
+    stop(sprintf("1 %s_%s %d", var, mm, length(f)))
+  f
+}
+
+# CHELSA °C
+fix_units <- function(r){
+  gm <- as.numeric(global(r, "mean", na.rm=TRUE))
+  if (!is.na(gm) && gm > 200) r <- r - 273.15        # Kelvin -> °C
+  if (!is.na(gm) && gm > 70 && gm < 200) r <- r/10   # °C -> °C
+  r
+}
+
+# 30° -> 1°
+to_1deg <- function(r, target=template1deg){
+  fact <- round(1 / res(r)[1])         # ~120 30
+  r_agg <- aggregate(r, fact=fact, fun=mean, na.rm=TRUE)
+  resample(r_agg, target, method="bilinear")
+}
+
+tmean_1deg_list <- vector("list", 12)
+
+for (m in 1:12) {
+  mm <- sprintf("%02d", m)
+  fmax <- find_month(mm, "tasmax")
+  fmin <- find_month(mm, "tasmin")
+  
+  rmax <- fix_units(rast(fmax))
+  rmin <- fix_units(rast(fmin))
+  
+  # 1°
+  rmax_1d <- to_1deg(rmax)
+  rmin_1d <- to_1deg(rmin)
+  
+  # Tmean
+  tmean_1deg_list[[m]] <- (rmax_1d + rmin_1d) / 2
+}
+
+tmean_1deg_stack <- rast(tmean_1deg_list)
+names(tmean_1deg_stack) <- sprintf("near_surface_temperature_%02d", 1:12)
+
+# Write
+for (m in 1:12) {
+  writeRaster(tmean_1deg_stack[[m]],
+              file.path(out_dir, sprintf("near-surface_temperature_%02d.tif", m)),
+              overwrite=TRUE)
+}
+writeRaster(tmean_1deg_stack,
+            file.path(out_dir, "near-surface_temperature_1-12.tif"),
+            overwrite=TRUE)
+```
+
+### Preprocess land cover data
+
+To represent projected human impacts on biodiversity, we used the projected land-use under socio-climatic scenarios from Chen,Li&Liu (<https://www.nature.com/articles/s41597-022-01208-6>). We used data from the SSP5_RCP85 to match the datasets of the Climate change scenarios (see above). The dataset represent land-use in **10 years** intervals, from **2020** to **2100**.
+
+Modifications were made to the dataset to make them MadingleyR-compliant, only the resulting data are provided for size reasons.
+
+-   Convert land-use data to HANPP Following Haberl 2007 (<https://www.pnas.org/doi/epdf/10.1073/pnas.0704243104>), we converted the land-use values to HANPP equivalent values. Anthropic presence: 0.73 Agricultural land: 0.835 Natural habitat: 1 Everything else: 0 - Resample: The initial data used a 1km resolution, while everything else in MadingleyR used a 1 degree resolution. The dataset was resampled to 1 degree.
+
+-   Reprojection: Make sure every raster is in the same projection (4326)
+
+```{r preprocess_hanpp, echo=TRUE}
+library(MadingleyR)
+library(terra)
+library(tidyverse)
+
+source("R/functions/utils_rasters.R")
+
+input_folder <- "Data/land_cover/land_cover_projection/raw"
+output_folder <- "Data/land_cover/land_cover_projection/processed"
+
+# Load MadingleyR default inputs
+sptl_inp <- madingley_inputs("spatial inputs")
+mask <- sptl_inp[["hanpp"]]
+
+# Read land cover data
+r_hanpp_list <- read_rasters(input_folder)
+
+# Process HANPP
+for(i in 1:length(r_hanpp_list)){
+  r_hanpp <- r_hanpp_list[[i]]
+  
+  # Anthropic presence: 0.73 Agricultural land: 0.835
+  r_hanpp <- subst(r_hanpp, from=c(5,6), to=c(0.165,0.27))
+  r_hanpp[r_hanpp >= 1] <- 1
+  
+  # Project to MadingleyR default inputs
+  r_hanpp <- project(r_hanpp, mask, method="bilinear")
+  
+  r_hanpp_list[[i]] <- r_hanpp
+  
+  writeRaster(r_hanpp,
+              paste0(output_folder,"/hanpp_",
+                     names(r_hanpp),'.tif'),
+              overwrite=T)
+}
+```
+
+## Run the model
+
+### 1) Initialize and spin-up
+
+To run the model we loaded the default MadingleyR inputs. We selected the North America region (Canada, United States and Mexico) and crop and masked all the spatial inputs to reduce the size of the files for better handling. We ran the model for a *spin-up* of **200 years** and a *max cohort size* of **100**.
+
+```{r run_spin_up, echo=TRUE}
+library("MadingleyR")
+library("terra")
+library("sf")
+library("rnaturalearth")
+library("tidyterra")
+
+set.seed(123)
+source("R/functions/utils_rasters.R")
+
+output_folder <- "~/Desktop/Madingley/output_test"
+spatial_window <- c(-170, -50, 15, 83)
+countries_list <- c("United States of America", 
+                    "Canada", 
+                    "Mexico")
+spin_up_years <- 200
+
+if (!dir.exists(output_folder)) {
+  dir.create(output_folder, recursive = TRUE)
+}
+
+# Load MadingleyR default inputs
+sptl_inp <- madingley_inputs("spatial inputs")
+chrt_def <- madingley_inputs("cohort definition")
+stck_def <- madingley_inputs("stock definition")
+mdl_prms <- madingley_inputs("model parameters")
+
+# Get countries shapefile
+world <- ne_countries(scale = "medium", returnclass = "sf")
+north_america <- vect(world[world$name %in% countries_list, ])
+
+# Crop and mask spatial inputs 
+sptl_inp <- mask_rasters_with_vector(inputs = sptl_inp, 
+                                     spatial_vector= north_america)
+sptl_inp <- crop_rasters_with_window(inputs = sptl_inp, 
+                                     spatial_window = spatial_window)
+spatial_window <- as.vector(ext(sptl_inp$hanpp)) # Update window
+
+#### Run spin-up ####
+# Initialize the model using the pre-loaded inputs
+mdata_init <- madingley_init(spatial_window = spatial_window,
+                             cohort_def = chrt_def,
+                             stock_def = stck_def,
+                             spatial_inputs = sptl_inp,
+                             max_cohort = 100)
+saveRDS(mdata_init, file.path(output_folder, "mdata_init.rds"))
+
+# Run spin-up
+dir_path <- paste0(output_folder,"/spin_up")
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+mdata_spin_up <- madingley_run(madingley_data = mdata_init,
+                               out_dir = dir_path,
+                               years = spin_up_years,
+                               cohort_def = chrt_def,
+                               stock_def = stck_def,
+                               spatial_inputs = sptl_inp,
+                               model_parameters = mdl_prms,
+                               max_cohort = 100)
+saveRDS(mdata_spin_up, file.path(output_folder, "mdata_spin_up.rds"))
+```
+
+From this point, we use this initial *spin-up* run to implement our different scenarios.
+
+### 2) Control scenario
+
+To compare the results, we let the model run for the same amount of time the scenarios would run (200 years).
+
+```{r run_control, echo=TRUE}
+control_years <- 200
+
+#### Run control scenario ####
+dir_path <- paste0(output_folder,"/control")
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+mdata_control <- madingley_run(out_dir = dir_path,
+                                  years = control_years, 
+                                  madingley_data = mdata_spin_up,
+                                  spatial_inputs = sptl_inp,
+                                  silenced = F,
+                                  max_cohort = 100, # at least 500
+                                  apply_hanpp = F)
+saveRDS(mdata_control, paste0(output_folder, "/mdata_control.rds"))
+```
+
+### 3) Land cover scenario
+
+The HANPP rasters had NULL values in some regions covered by the default spatial data, so we filled the NULL values with 1. Then, we run the model with the HANPP data for 10 years with each raster from 2020 to 2090. With the 2100 raster we run the model for 120 years.
+
+```{r run_lc , echo=TRUE}
+
+hanpp_folder <- "Data/land_cover/land_cover_projection/processed"
+steps_years <- 10
+final_years <- 120
+
+#### Load spin-up ####
+mdata_lc_list <- list()
+mdata_lc_list[[1]] <- mdata_spin_up
+
+#### Preprocess HANPP data ####
+r_hanpp_list <- read_rasters(hanpp_folder)
+# Remove NA's
+r_hanpp_list <- lapply(r_hanpp_list, function(r) {
+  r[is.na(r[])] <- 1
+  r
+})
+r_hanpp_list <- mask_rasters_with_vector(inputs = r_hanpp_list, 
+                                         spatial_vector = north_america)
+r_hanpp_list <- crop_rasters_with_window(inputs = r_hanpp_list, 
+                                           spatial_window = spatial_window)
+
+#### Run land cover scenario ####
+# Run the Madingley model with HANPP input
+for(i in 1:length(r_hanpp_list)){
+  r_hanpp <- r_hanpp_list[[i]]
+  hanpp_name <- names(r_hanpp)
+  print(hanpp_name)
+    
+  sptl_inp$hanpp[] <- r_hanpp
+  plot(sptl_inp$hanpp)
+
+  dir_path <- paste0(output_folder,"/",hanpp_name)
+  if (!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+  
+  # Run the model for 100 years with the last HANPP raster
+  # and for 10 years with the rest
+  if(i == length(r_hanpp_list)){
+    n_years <- final_years
+  } else {
+    n_years <- steps_years
+  }
+  mdata_lc_list[[i+1]] <- madingley_run(years = n_years, 
+                                     out_dir = dir_path,
+                                     madingley_data = mdata_lc_list[[i]],
+                                     spatial_inputs = sptl_inp,
+                                     silenced = F,
+                                     max_cohort = 100,
+                                     apply_hanpp = 1)
+  saveRDS(mdata_lc_list[[i+1]], paste0(output_folder, "/", hanpp_name, ".rds"))
+}
+```
+
+### 5) Climate change scenario
+
+```{r run_climate, echo=TRUE}
+climate_folder <- "Data/madingley_out_ssp585_2050s"
+n_years <- 1
+
+#### Load spin-up ####
+mdata_climate_list <- list()
+mdata_climate_list[[1]] <- mdata_spin_up
+
+# Preprocess temperature data
+r_temp <- rast(file.path(climate_folder,"near-surface_temperature_1-12.tif"))
+r_temp <- mask_rasters_with_vector(inputs = r_temp, 
+                                   spatial_vector = north_america)
+r_temp <- crop_rasters_with_window(inputs = r_temp, 
+                                   spatial_window = spatial_window)
+
+#### Run climate change scenario ####
+r_temp_control <- sptl_inp$`near-surface_temperature`
+sptl_inp$`near-surface_temperature` <- r_temp
+
+dir_path <- paste0(output_folder,"/climate_scenario")
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+mdata_climate_list[[2]] <- madingley_run(years = n_years, 
+                                 out_dir = dir_path,
+                                 madingley_data = mdata_climate_list[[1]],
+                                 spatial_inputs = sptl_inp,
+                                 silenced = F,
+                                 max_cohort = 100,
+                                 apply_hanpp = F)
+
+saveRDS(mdata_climate_list[[2]], paste0(output_folder, "/climate_scenario.rds"))
+```
+
+### 4) Remove large herbivores
+
+To represent extinction events, we removed certain cohorts. In this case, all the large herbivores were removed. We reproduced the tests made by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
+
+```{r scen_herbiv, echo=TRUE}
+# Get Simran's code here
+```
+
+### 5) Remove large carnivores
+
+To represent extinction events, we removed certain cohorts. In this case, all the large carnivores were removed. This test is inspired by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
+
+```{r scen_carniv, echo=TRUE}
+mdata_carni = mdata2
+
+remove_idx = which(mdata_carni$cohorts$AdultMass > 1e5 & mdata_carni$cohorts$FunctionalGroupIndex ==1)
+
+cohort_defs$PROPERTY_Maximum.mass[2] = 100000
+
+cohort_defs=madingley_inputs('cohort definition')
+```
+
+```{r run_scen_carniv, echo=FALSE}
+mdata4 = madingley_run(madingley_data = mdata_carni, years = 10, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(10,0,10,10))
+```
+
+```{r present_scen_carnic, echo=FALSE}
+par(mfrow = c(1, 2))
+plot_foodweb(mdata4, max_flows = 5)
+```
+
+### Future work
+
+-   Work with a smaller scale (the land cover data doesn't vary significantly each year when we aggregated it)
+
+-   Increase the mortality rate to run a scenario of biodiversity loss
+
+-   Cross the scenarios
