@@ -86,6 +86,10 @@ remotes::install_github(
   build_vignettes = TRUE
 )
 ```
+(UPDATE) If you get an error message at the end of the process, stating that your machine doesn't have the rights to move the temporary installation to the permanent repository, use this command before the install:
+```r
+Sys.setenv(R_INSTALL_STAGED = FALSE)
+```
 
 You will now have the latest version of the madingleyR from the Bios2 workshop
 
