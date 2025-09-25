@@ -435,3 +435,6 @@ plot_foodweb(mdata4, max_flows = 5)
 -   Increase the mortality rate to run a scenario of biodiversity loss
 
 -   Cross the scenarios
+- Run climate scenarios for multiple incremental changes (only 2020 and 2050 at this point)
+- Run every scenario multiple times to establish trends on stochastic functions
+- Find a better way to represent human impact (HANPP only reduce productivity, not migration and possibly other changes)
