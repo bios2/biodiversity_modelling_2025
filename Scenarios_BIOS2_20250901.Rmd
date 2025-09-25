@@ -326,8 +326,53 @@ saveRDS(mdata_climate_list[[2]], paste0(output_folder, "/climate_scenario.rds"))
 
 To represent extinction events, we removed certain cohorts. In this case, all the large herbivores were removed. We reproduced the tests made by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
 
-```{r scen_herbiv, echo=TRUE}
-# Get Simran's code here
+```{r scen_herbi, echo=TRUE}
+# Setting up the spatial window
+spatial_window <- c(-170, -50, 15, 83)
+
+# set the maximum body masses of the functional groups manually 
+# these are used to seed the cohorts
+sptl_inp = madingley_inputs('spatial inputs') # load default inputs
+sptl_inp$Endo_H_max[ ] = 4000000 # set max size herbivores = 4000000 g (4000 kg)
+sptl_inp$Endo_C_max[ ] = 600000 # set max size carnivores = 600000 g (600 kg)
+sptl_inp$Endo_O_max[ ] = 200000 # set max size omnivores = 200000 g (200 kg)
+sptl_inp$Ecto_max[ ] = 150000 # set max size ectotherms = 150000 g (150 kg)
+
+# set the maximum allowed body masses during the simulation run per functional group
+cohort_defs = madingley_inputs('cohort definition') # load default inputs
+cohort_defs$PROPERTY_Maximum.mass[1] = 4000000 # set max size herbivores = 4000000 g (4000 kg)
+cohort_defs$PROPERTY_Maximum.mass[2] = 600000 # set max size carnivores = 600000 g (600 kg)
+cohort_defs$PROPERTY_Maximum.mass[3] = 200000 # set max size omnivores = 200000 g (200 kg)
+
+# Initialize the model
+mdata_herbi_init = madingley_init(spatial_window = spatial_window, spatial_inputs = sptl_inp, cohort_def = cohort_defs)
+
+# Run spin-up of 100 years (output results to D:/TMP/MadingleyOut)
+mdata_herbi = madingley_run(out_dir = 'D:/TMP/MadingleyOut', 
+                       madingley_data = mdata_herbi_init, 
+                       cohort_def = cohort_defs,
+                       spatial_inputs = sptl_inp, 
+                       years = 100, output_timestep = c(100,0,100,100))
+```
+```{r control_scen_herbi, echo=FALSE}
+# Run 50-year control simulation (for later comparison)
+mdata_herbi_control = madingley_run(madingley_data = mdata_herbi, years = 50, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(50,0,50,50))
+```
+```{r run_scen_herbi, echo=FALSE}
+remove_idx = which(mdata_herbi$cohorts$AdultMass > 1e5 & mdata_herbi$cohorts$FunctionalGroupIndex ==0)
+
+cohort_defs$PROPERTY_Maximum.mass[1] = 100000
+
+cohort_defs=madingley_inputs('cohort definition')
+```
+
+```{r run_scen_herbi, echo=FALSE}
+mdata4 = madingley_run(madingley_data = mdata_herbi, years = 50, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(50,0,50,50))
+```
+
+```{r present_scen_herbi, echo=FALSE}
+par(mfrow = c(1, 2))
+plot_foodweb(mdata4, max_flows = 5)
 ```
 
 ### 5) Remove large carnivores
@@ -335,8 +380,38 @@ To represent extinction events, we removed certain cohorts. In this case, all th
 To represent extinction events, we removed certain cohorts. In this case, all the large carnivores were removed. This test is inspired by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
 
 ```{r scen_carniv, echo=TRUE}
-mdata_carni = mdata2
+# Setting up the spatial window
+spatial_window <- c(-170, -50, 15, 83)
 
+# set the maximum body masses of the functional groups manually 
+# these are used to seed the cohorts
+sptl_inp = madingley_inputs('spatial inputs') # load default inputs
+sptl_inp$Endo_H_max[ ] = 4000000 # set max size herbivores = 4000000 g (4000 kg)
+sptl_inp$Endo_C_max[ ] = 600000 # set max size carnivores = 600000 g (600 kg)
+sptl_inp$Endo_O_max[ ] = 200000 # set max size omnivores = 200000 g (200 kg)
+sptl_inp$Ecto_max[ ] = 150000 # set max size ectotherms = 150000 g (150 kg)
+
+# set the maximum allowed body masses during the simulation run per functional group
+cohort_defs = madingley_inputs('cohort definition') # load default inputs
+cohort_defs$PROPERTY_Maximum.mass[1] = 4000000 # set max size herbivores = 4000000 g (4000 kg)
+cohort_defs$PROPERTY_Maximum.mass[2] = 600000 # set max size carnivores = 600000 g (600 kg)
+cohort_defs$PROPERTY_Maximum.mass[3] = 200000 # set max size omnivores = 200000 g (200 kg)
+
+# Initialize the model
+mdata_carni_init = madingley_init(spatial_window = spatial_window, spatial_inputs = sptl_inp, cohort_def = cohort_defs)
+
+# Run spin-up of 100 years (output results to D:/TMP/MadingleyOut)
+mdata_carni = madingley_run(out_dir = 'D:/TMP/MadingleyOut', 
+                       madingley_data = mdata_carni_init, 
+                       cohort_def = cohort_defs,
+                       spatial_inputs = sptl_inp, 
+                       years = 100)
+```
+```{r control_scen_carniv, echo=FALSE}
+# Run 50-year control simulation (for later comparison)
+mdata_carni_control = madingley_run(madingley_data = mdata_carni, years = 50, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(50,0,50,50))
+```
+```{r run_scen_carniv, echo=FALSE}
 remove_idx = which(mdata_carni$cohorts$AdultMass > 1e5 & mdata_carni$cohorts$FunctionalGroupIndex ==1)
 
 cohort_defs$PROPERTY_Maximum.mass[2] = 100000
@@ -345,7 +420,7 @@ cohort_defs=madingley_inputs('cohort definition')
 ```
 
 ```{r run_scen_carniv, echo=FALSE}
-mdata4 = madingley_run(madingley_data = mdata_carni, years = 10, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(10,0,10,10))
+mdata4 = madingley_run(madingley_data = mdata_carni, years = 50, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(50,0,50,50))
 ```
 
 ```{r present_scen_carnic, echo=FALSE}
