@@ -1,40 +1,69 @@
 #
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
+# This is the user-interface definition of the Shiny web application designed for the Madingley summer school
 
 library(shiny)
+library(bslib)
+library(terra)
 
-# Define UI for application that draws a histogram
+# Define UI
 fluidPage(
+    # Make the sidebarPanel sticky
+    tags$style(
+        HTML(
+            "div.sticky {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        }"
+        )
+    ),
     
-    titlePanel("Simulation results and Essential Biodiversity Variables"),
+    # Application titel
+    titlePanel("Predicting change in biodiversity - Madingley"),
     
-    fluidRow(
-        column(
-            width = 4,
-            plotOutput("rasterinput")
-        ),
-        
-        column(
-            width = 4,
-            plotOutput("rasterouput")
-        ),
-        
-        column(
-            width = 2,
+    # Sidebar with input controls
+    sidebarLayout(
+        tagAppendAttributes(sidebarPanel(
+            width = 3,
+            h4("Measure of Essential biodiversity variables using Madingley"),
             
-            # Placeholder for inputs
-            h3("Placeholder for controls over simulation"),
-            selectInput("Climate", "Choose climate scenario:",
-                        choices = c("Control", "Warming")),
-            selectInput("Land use", "Choose land use scenario:", 
-                        choices = c("Control", "Land use +"))
+            p(
+                "This is an area where we will breifly describe the project and what this app does. Exemple of content include : origin of the input data, how the model was computed, what are the avaible EBV and what do they means, etc.."
+            ),
+            
+            # Selection of the horizon of the projection
+            # CAUTION ***** Please note that the projection for 2040 did not exist so we copied 2045 *****
+            sliderInput(
+                inputId = "projection_year",
+                label = "Horizon of the projection",
+                min = 2025,
+                max = 2055,
+                value = 2025,
+                step = 5
+            ),
+        ), class = "sticky"),
+        
+        mainPanel(
+            # width = 9,
+            
+            # Row 1: two cards side by side
+            fluidRow(
+                style = "display:flex;",
+                # Control card heigh
+                column(6, card(
+                    # Left plot, raster of land in 2020
+                    h3(textOutput("Land use - 2020")), 
+                    plotOutput("rasterHANPPpresent"), 
+                    style = "flex:1; height:35vh;"
+                )),
+                column(6, card(
+                    # Right plot, raster of l;and use on the selected horizon
+                    h3(textOutput("Land use - 2020")), 
+                    plotOutput("rasterHANPPfuture"), 
+                    style = "flex:1; height:35vh;"
+                ))
+            )
         )
     )
 )
-
