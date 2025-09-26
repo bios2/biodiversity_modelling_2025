@@ -613,6 +613,7 @@ r_hanpp_list &lt;- mask_rasters_with_vector(inputs = r_hanpp_list,
 r_hanpp_list &lt;- crop_rasters_with_window(inputs = r_hanpp_list, 
                                            spatial_window = spatial_window)
 
+sptl_inp_lc &lt;- sptl_inp
 #### Run land cover scenario ####
 # Run the Madingley model with HANPP input
 for(i in 1:length(r_hanpp_list)){
@@ -620,8 +621,8 @@ for(i in 1:length(r_hanpp_list)){
   hanpp_name &lt;- names(r_hanpp)
   print(hanpp_name)
     
-  sptl_inp$hanpp[] &lt;- r_hanpp
-  plot(sptl_inp$hanpp)
+  sptl_inp_lc$hanpp[] &lt;- r_hanpp
+  plot(sptl_inp_lc$hanpp)
 
   dir_path &lt;- paste0(output_folder,&quot;/&quot;,hanpp_name)
   if (!dir.exists(dir_path)) {
@@ -638,7 +639,7 @@ for(i in 1:length(r_hanpp_list)){
   mdata_lc_list[[i+1]] &lt;- madingley_run(years = n_years, 
                                      out_dir = dir_path,
                                      madingley_data = mdata_lc_list[[i]],
-                                     spatial_inputs = sptl_inp,
+                                     spatial_inputs = sptl_inp_lc,
                                      silenced = F,
                                      max_cohort = 100,
                                      apply_hanpp = 1)
@@ -662,8 +663,8 @@ r_temp &lt;- crop_rasters_with_window(inputs = r_temp,
                                    spatial_window = spatial_window)
 
 #### Run climate change scenario ####
-r_temp_control &lt;- sptl_inp$`near-surface_temperature`
-sptl_inp$`near-surface_temperature` &lt;- r_temp
+sptl_inp_clim &lt;- sptl_inp
+sptl_inp_clim$`near-surface_temperature` &lt;- r_temp
 
 dir_path &lt;- paste0(output_folder,&quot;/climate_scenario&quot;)
 if (!dir.exists(dir_path)) {
@@ -672,7 +673,7 @@ if (!dir.exists(dir_path)) {
 mdata_climate_list[[2]] &lt;- madingley_run(years = n_years, 
                                  out_dir = dir_path,
                                  madingley_data = mdata_climate_list[[1]],
-                                 spatial_inputs = sptl_inp,
+                                 spatial_inputs = sptl_inp_clim,
                                  silenced = F,
                                  max_cohort = 100,
                                  apply_hanpp = F)
@@ -684,20 +685,62 @@ saveRDS(mdata_climate_list[[2]], paste0(output_folder, &quot;/climate_scenario.r
 <p>To represent extinction events, we removed certain cohorts. In this
 case, all the large herbivores were removed. We reproduced the tests
 made by (<a href="https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html" class="uri">https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html</a>).</p>
-<pre class="r"><code># Get Simran&#39;s code here</code></pre>
+<pre class="r"><code># Remove large (&gt;100 kg) endothermic herbivores
+mdata_spin_up_herb &lt;- mdata_spin_up
+remove_idx &lt;- which(mdata_spin_up_herb$cohorts$AdultMass &gt; 1e5 &amp; 
+                     mdata_spin_up_herb$cohorts$FunctionalGroupIndex == 0)
+mdata_spin_up_herb$cohorts &lt;- mdata_spin_up_herb$cohorts[-remove_idx, ]
+
+# Set max allowed endothermic herbivore body mass in cohort definitions
+chrt_def_herb &lt;- madingley_inputs(&quot;cohort definition&quot;)
+chrt_def_herb$PROPERTY_Maximum.mass[1] = 100000 # set max size herbivores = 100000 g (100 kg)
+
+dir_path &lt;- paste0(output_folder,&quot;/herbivore_scenario&quot;)
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+mdata_herbivore_scenario &lt;- madingley_run(years = n_years, 
+                                         out_dir = dir_path,
+                                      madingley_data = mdata_spin_up_herb,
+                                         spatial_inputs = sptl_inp,
+                                         cohort_def = chrt_def_herb,
+                                         silenced = F,
+                                         max_cohort = 100,
+                                         apply_hanpp = F)
+
+saveRDS(mdata_herbivore_scenario, 
+        paste0(output_folder, &quot;/mdata_herbivore_scenario.rds&quot;))</code></pre>
 </div>
 <div id="remove-large-carnivores" class="section level3">
 <h3>5) Remove large carnivores</h3>
 <p>To represent extinction events, we removed certain cohorts. In this
 case, all the large carnivores were removed. This test is inspired by
 (<a href="https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html" class="uri">https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html</a>).</p>
-<pre class="r"><code>mdata_carni = mdata2
+<pre class="r"><code># Remove large (&gt;100 kg) endothermic carnivores
+mdata_spin_up_carn &lt;- mdata_spin_up
+remove_idx &lt;- which(mdata_spin_up_carn$cohorts$AdultMass &gt; 1e5 &amp; 
+                      mdata_spin_up_carn$cohorts$FunctionalGroupIndex == 1)
+mdata_spin_up_carn$cohorts &lt;- mdata_spin_up_carn$cohorts[-remove_idx, ]
 
-remove_idx = which(mdata_carni$cohorts$AdultMass &gt; 1e5 &amp; mdata_carni$cohorts$FunctionalGroupIndex ==1)
+# Set max allowed endothermic herbivore body mass in cohort definitions
+chrt_def_carn &lt;- madingley_inputs(&quot;cohort definition&quot;)
+chrt_def_carn$PROPERTY_Maximum.mass[2] = 100000 # set max size carnivores = 100000 g (100 kg)
 
-cohort_defs$PROPERTY_Maximum.mass[2] = 100000
+dir_path &lt;- paste0(output_folder,&quot;/carnivore_scenario&quot;)
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+mdata_carnivore_scenario &lt;- madingley_run(years = n_years, 
+                                          out_dir = dir_path,
+                                          madingley_data = mdata_spin_up_carn,
+                                          spatial_inputs = sptl_inp,
+                                          cohort_def = chrt_def_carn,
+                                          silenced = F,
+                                          max_cohort = 100,
+                                          apply_hanpp = F)
 
-cohort_defs=madingley_inputs(&#39;cohort definition&#39;)</code></pre>
+saveRDS(mdata_carnivore_scenario, 
+        paste0(output_folder, &quot;/mdata_carnivore_scenario.rds&quot;))</code></pre>
 </div>
 <div id="future-work" class="section level3">
 <h3>Future work</h3>

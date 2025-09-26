@@ -253,6 +253,7 @@ r_hanpp_list <- mask_rasters_with_vector(inputs = r_hanpp_list,
 r_hanpp_list <- crop_rasters_with_window(inputs = r_hanpp_list, 
                                            spatial_window = spatial_window)
 
+sptl_inp_lc <- sptl_inp
 #### Run land cover scenario ####
 # Run the Madingley model with HANPP input
 for(i in 1:length(r_hanpp_list)){
@@ -260,8 +261,8 @@ for(i in 1:length(r_hanpp_list)){
   hanpp_name <- names(r_hanpp)
   print(hanpp_name)
     
-  sptl_inp$hanpp[] <- r_hanpp
-  plot(sptl_inp$hanpp)
+  sptl_inp_lc$hanpp[] <- r_hanpp
+  plot(sptl_inp_lc$hanpp)
 
   dir_path <- paste0(output_folder,"/",hanpp_name)
   if (!dir.exists(dir_path)) {
@@ -278,7 +279,7 @@ for(i in 1:length(r_hanpp_list)){
   mdata_lc_list[[i+1]] <- madingley_run(years = n_years, 
                                      out_dir = dir_path,
                                      madingley_data = mdata_lc_list[[i]],
-                                     spatial_inputs = sptl_inp,
+                                     spatial_inputs = sptl_inp_lc,
                                      silenced = F,
                                      max_cohort = 100,
                                      apply_hanpp = 1)
@@ -304,8 +305,8 @@ r_temp <- crop_rasters_with_window(inputs = r_temp,
                                    spatial_window = spatial_window)
 
 #### Run climate change scenario ####
-r_temp_control <- sptl_inp$`near-surface_temperature`
-sptl_inp$`near-surface_temperature` <- r_temp
+sptl_inp_clim <- sptl_inp
+sptl_inp_clim$`near-surface_temperature` <- r_temp
 
 dir_path <- paste0(output_folder,"/climate_scenario")
 if (!dir.exists(dir_path)) {
@@ -314,7 +315,7 @@ if (!dir.exists(dir_path)) {
 mdata_climate_list[[2]] <- madingley_run(years = n_years, 
                                  out_dir = dir_path,
                                  madingley_data = mdata_climate_list[[1]],
-                                 spatial_inputs = sptl_inp,
+                                 spatial_inputs = sptl_inp_clim,
                                  silenced = F,
                                  max_cohort = 100,
                                  apply_hanpp = F)
@@ -327,7 +328,31 @@ saveRDS(mdata_climate_list[[2]], paste0(output_folder, "/climate_scenario.rds"))
 To represent extinction events, we removed certain cohorts. In this case, all the large herbivores were removed. We reproduced the tests made by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
 
 ```{r scen_herbiv, echo=TRUE}
-# Get Simran's code here
+# Remove large (>100 kg) endothermic herbivores
+mdata_spin_up_herb <- mdata_spin_up
+remove_idx <- which(mdata_spin_up_herb$cohorts$AdultMass > 1e5 & 
+                     mdata_spin_up_herb$cohorts$FunctionalGroupIndex == 0)
+mdata_spin_up_herb$cohorts <- mdata_spin_up_herb$cohorts[-remove_idx, ]
+
+# Set max allowed endothermic herbivore body mass in cohort definitions
+chrt_def_herb <- madingley_inputs("cohort definition")
+chrt_def_herb$PROPERTY_Maximum.mass[1] = 100000 # set max size herbivores = 100000 g (100 kg)
+
+dir_path <- paste0(output_folder,"/herbivore_scenario")
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+mdata_herbivore_scenario <- madingley_run(years = n_years, 
+                                         out_dir = dir_path,
+                                      madingley_data = mdata_spin_up_herb,
+                                         spatial_inputs = sptl_inp,
+                                         cohort_def = chrt_def_herb,
+                                         silenced = F,
+                                         max_cohort = 100,
+                                         apply_hanpp = F)
+
+saveRDS(mdata_herbivore_scenario, 
+        paste0(output_folder, "/mdata_herbivore_scenario.rds"))
 ```
 
 ### 5) Remove large carnivores
@@ -335,22 +360,31 @@ To represent extinction events, we removed certain cohorts. In this case, all th
 To represent extinction events, we removed certain cohorts. In this case, all the large carnivores were removed. This test is inspired by (<https://madingleyr.github.io/MadingleyR/CaseStudies/CASESTUDY1.html>).
 
 ```{r scen_carniv, echo=TRUE}
-mdata_carni = mdata2
+# Remove large (>100 kg) endothermic carnivores
+mdata_spin_up_carn <- mdata_spin_up
+remove_idx <- which(mdata_spin_up_carn$cohorts$AdultMass > 1e5 & 
+                      mdata_spin_up_carn$cohorts$FunctionalGroupIndex == 1)
+mdata_spin_up_carn$cohorts <- mdata_spin_up_carn$cohorts[-remove_idx, ]
 
-remove_idx = which(mdata_carni$cohorts$AdultMass > 1e5 & mdata_carni$cohorts$FunctionalGroupIndex ==1)
+# Set max allowed endothermic herbivore body mass in cohort definitions
+chrt_def_carn <- madingley_inputs("cohort definition")
+chrt_def_carn$PROPERTY_Maximum.mass[2] = 100000 # set max size carnivores = 100000 g (100 kg)
 
-cohort_defs$PROPERTY_Maximum.mass[2] = 100000
+dir_path <- paste0(output_folder,"/carnivore_scenario")
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE)
+}
+mdata_carnivore_scenario <- madingley_run(years = n_years, 
+                                          out_dir = dir_path,
+                                          madingley_data = mdata_spin_up_carn,
+                                          spatial_inputs = sptl_inp,
+                                          cohort_def = chrt_def_carn,
+                                          silenced = F,
+                                          max_cohort = 100,
+                                          apply_hanpp = F)
 
-cohort_defs=madingley_inputs('cohort definition')
-```
-
-```{r run_scen_carniv, echo=FALSE}
-mdata4 = madingley_run(madingley_data = mdata_carni, years = 10, spatial_inputs = sptl_inp, cohort_def = cohort_defs,output_timestep = c(10,0,10,10))
-```
-
-```{r present_scen_carnic, echo=FALSE}
-par(mfrow = c(1, 2))
-plot_foodweb(mdata4, max_flows = 5)
+saveRDS(mdata_carnivore_scenario, 
+        paste0(output_folder, "/mdata_carnivore_scenario.rds"))
 ```
 
 ### Future work
