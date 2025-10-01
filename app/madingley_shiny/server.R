@@ -13,6 +13,10 @@ function(input, output, session) {
         cbind(c(-175, -175, -45,  -45), c(10, 80, 80, 10)),
         type="polygon", crs="+proj=longlat +datum=WGS84")
     
+    land_mask <- terra::rast(here::here("Data/land_mask.tif")) |> 
+        terra::crop(mask_NorthAm)
+        
+    
     
     # Switch the Temperature and HANPP radiobutton if scenarios are selected
     observeEvent(input$scenario, {
@@ -42,14 +46,16 @@ function(input, output, session) {
     
     # Initial temperature raster
     inittemp_rast <- reactive({
-        r <- terra::rast(here::here("Data", "Tempglobal_2020_placeholder.tif"))
-        terra::crop(r, mask_NorthAm)
+        r <- mean(terra::rast(here::here("Data", "Tempglobal_2020.tif")))
+        terra::crop(r, mask_NorthAm) |> 
+            terra::mask(land_mask, maskvalues = 0)
     })
     
     # Simulated temperature raster
     simtemp_rast <- reactive({
-        r <- terra::rast(here::here("Data", paste0("Tempglobal_", input$temp, "_placeholder.tif")))
-        terra::crop(r, mask_NorthAm)
+        r <- mean(terra::rast(here::here("Data", paste0("Tempglobal_", input$temp, ".tif"))))
+        terra::crop(r, mask_NorthAm) |> 
+            terra::mask(land_mask, maskvalues = 0)
     })
     
     # Difference raster
