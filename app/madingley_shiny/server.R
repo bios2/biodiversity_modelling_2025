@@ -77,13 +77,13 @@ function(input, output, session) {
     
     # Initial HANPP raster
     initHANPP_rast <- reactive({
-        r <- terra::rast(here::here("Data", "HANPPglobal_SSP5_RCP85_2020.tif"))
+        r <- terra::rast(here::here("Data/HANPP", "HANPPglobal_SSP5_RCP85_2020_1deg.tif"))
         terra::crop(r, mask_NorthAm)
     })
     
     # Simulated HANPP raster
     simHANPP_rast <- reactive({
-        r <- terra::rast(here::here("Data", paste0("HANPPglobal_SSP5_RCP85_", input$HANPP, ".tif")))
+        r <- terra::rast(here::here("Data/HANPP", paste0("HANPPglobal_SSP5_RCP85_", input$HANPP, "_1deg.tif")))
         terra::crop(r, mask_NorthAm)
     })
     
