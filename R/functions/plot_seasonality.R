@@ -19,18 +19,18 @@
 plot_seasonality <- function(mdata){
   
   # Assign Lat Lon to the output of cohorts
-  mdata <- assign_lat_lon(mdata)
-  
+  mdata <- assign_lat_lon(mdata,spatial_window = c(-170, -50, 15, 83))
+  print(mdata)
   # Extract the number of birth per month for each cell
-  cohorts <- mdata$cohorts
+  #cohorts <- mdata$cohorts
   
-  cohorts_grid <- cohorts |>
+  cohorts_grid <- mdata |>
     dplyr::mutate(BirthTimeStep = BirthTimeStep %% 12) |>
     dplyr::group_by(GridcellIndex, BirthTimeStep, lat, lon) |>
     dplyr::summarise(
-      BirthCount = n() ,
-      AbundanceCount = sum(CohortAbundance),
-      BiomassTotal = sum(CohortAbundance * IndividualBodyMass),
+      BirthCount = n(),
+      AbundanceCount = sum(GroupAbundance),
+      BiomassTotal = sum(RealBiomass),
       .groups = "drop"
     )
   

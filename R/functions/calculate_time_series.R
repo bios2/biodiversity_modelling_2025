@@ -8,8 +8,8 @@ library(data.table)
 
 
 calculate_time_series <- function(out_dir, size_bin_resolution){
-  filepath = paste(out_dir, "/cohort_properties", sep="")
-  
+  filepath = paste(out_dir, "/cohort_properties/", sep="")
+
   ## Get files of cohort data per month and put into a list of dataframes
   cohortFileNamesRaw <- list.files(path = filepath)
   numfiles <- length(cohortFileNamesRaw)
@@ -20,13 +20,14 @@ calculate_time_series <- function(out_dir, size_bin_resolution){
   })
   
   #Make more readable dataframe names from file names
-  cohortFileNames <- gsub("FullCohortProperties_","cohortProp_Month",cohortFileNamesRaw)
-  names(cohortMonthlyData) <- gsub(".csv","",cohortFileNames)
+  #cohortFileNames <- gsub("FullCohortProperties_","cohortProp_Month",cohortFileNamesRaw)
+  #names(cohortMonthlyData) <- gsub(".csv","",cohortFileNames)
   
   # summarize cohort datasets by binning them by body mass, focusing on location, functional group, body mass, abundance, and trophic level, then adding together the total abundance in each group
   cohortSummary <- lapply(cohortMonthlyData, function(x) {
     x %>%
-      select(GridcellIndex, FunctionalGroupIndex, IndividualBodyMass, CohortAbundance, TrophicIndex) %>%
+      select(GridcellIndex, FunctionalGroupIndex, IndividualBodyMass, CohortAbundance, TrophicIndex,
+             BirthTimeStep) %>%
       mutate(SizeClass = cut(IndividualBodyMass,
                               breaks = logspace(n = size_bin_resolution), #arbitrary number of bins
                               labels = as.character(c(1:(size_bin_resolution-1)))),
@@ -35,7 +36,7 @@ calculate_time_series <- function(out_dir, size_bin_resolution){
       mutate(SizeClass = as.factor(SizeClass),
              GridcellIndex = as.factor(GridcellIndex),
              FunctionalGroupIndex = as.factor(FunctionalGroupIndex)) %>%
-      dplyr::group_by(GridcellIndex, FunctionalGroupIndex, SizeClass) %>%
+      dplyr::group_by(GridcellIndex, FunctionalGroupIndex, SizeClass, BirthTimeStep) %>%
       dplyr::summarise(GroupAbundance = sum(CohortAbundance),
                        RealBiomass = sum(Biomass)) %>% 
       dplyr::ungroup()

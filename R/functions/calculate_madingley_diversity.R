@@ -31,7 +31,7 @@ logspace <- function(a = 10e-8, b = 10e5, n) {
 # Output : Dataframe with community diversity in each grid cell
 
 # Dependancies : 'tidyverse' library, 'madingleyR library' logspace handmade function
-calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
+calculate_madingley_diversity <- function(cohort_data,
                                           functional_group = NULL){
   #Filter for specified functional group
   if(!is.null(functional_group)){
@@ -100,14 +100,9 @@ calculate_madingley_diversity <- function(cohort_data, size_bin_resolution,
       #Filter to have only the data per cell
       filtered_data <- filter(data, GridcellIndex == i, Month == m)
       
-      #Calculate the index using loops
-      diversity <- 0
-      #Loop running through every cohort
-      for(j in nrow(filtered_data)){
-        p <- filtered_data$RelativeAbundance[j]
-        diversity <- diversity + p*log(p)
-      }
-      diversity <- -diversity
+      #Calculate the shannon diversity index
+      p <- filtered_data$RelativeAbundance
+      diversity <- -sum(p*log(p))
       
       #Add the result to the container vector
       Row <- c(m,i,diversity)
