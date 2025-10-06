@@ -15,8 +15,6 @@ function(input, output, session) {
     
     land_mask <- terra::rast(here::here("Data/land_mask.tif")) |> 
         terra::crop(mask_NorthAm)
-        
-    
     
     # Switch the Temperature and HANPP radiobutton if scenarios are selected
     observeEvent(input$scenario, {
@@ -74,7 +72,27 @@ function(input, output, session) {
     })
     
     output$rasterdifftemp <- renderPlot({
-        terra::plot(difftemp_rast())
+        r <- difftemp_rast()
+        
+        # Replace infinite values if any
+        r[!is.finite(r)] <- NA
+        
+        # Compute range and define centered color ramp
+        min_val <- terra::minmax(r)[1]
+        max_val <- terra::minmax(r)[2]
+        n <- 255
+        
+        # Symmetric color scale around 0
+        lim <- max(abs(min_val), abs(max_val))
+        breaks <- seq(-lim, lim, length.out = n + 1)
+        
+        cols <- c(
+            colorRampPalette(c("blue", "grey"))(n/2),
+            colorRampPalette(c("grey", "red"))(n/2)
+        )
+        
+        terra::plot(r, col = cols, colNA = "white",
+                    breaks = breaks, type = "continuous")
     })
     
     
@@ -109,7 +127,28 @@ function(input, output, session) {
     })
     
     output$rasterdiffHANPP <- renderPlot({
-        terra::plot(diffHANPP_rast())
+        r <- diffHANPP_rast()
+        
+        # Replace infinite values if any
+        r[!is.finite(r)] <- NA
+        
+        # Compute range and define centered color ramp
+        min_val <- terra::minmax(r)[1]
+        max_val <- terra::minmax(r)[2]
+        n <- 255
+        
+        # Symmetric color scale around 0
+        lim <- max(abs(min_val), abs(max_val))
+        breaks <- seq(-lim, lim, length.out = n + 1)
+        
+        cols <- c(
+            colorRampPalette(c("blue", "grey"))(n/2),
+            colorRampPalette(c("grey", "red"))(n/2)
+        )
+        
+        terra::plot(r, col = cols, colNA = "white",
+                    breaks = breaks, type = "continuous")
+        
     })    
 
     
@@ -150,7 +189,28 @@ function(input, output, session) {
     })
     
     output$rasterdiffshannon <- renderPlot({
-        terra::plot(diffshannon_rast())
+        r <- diffshannon_rast()
+        
+        # Replace infinite values if any
+        r[!is.finite(r)] <- NA
+        
+        # Compute range and define centered color ramp
+        min_val <- terra::minmax(r)[1]
+        max_val <- terra::minmax(r)[2]
+        n <- 255
+        
+        # Symmetric color scale around 0
+        lim <- max(abs(min_val), abs(max_val))
+        breaks <- seq(-lim, lim, length.out = n + 1)
+        
+        cols <- c(
+            colorRampPalette(c("blue", "grey"))(n/2),
+            colorRampPalette(c("grey", "red"))(n/2)
+        )
+        
+        terra::plot(r, col = cols, colNA = "white",
+                    breaks = breaks, type = "continuous")
+        
     })    
     
     ## Seasonality
