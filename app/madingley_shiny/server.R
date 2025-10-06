@@ -175,7 +175,24 @@ function(input, output, session) {
     
     # Difference raster (sim - init)
     diffshannon_rast <- reactive({
-        simshannon_rast() - initshannon_rast()
+        sim <- simshannon_rast()
+        init <- initshannon_rast()
+        
+        # Align extents and resolutions before subtraction
+        if (!terra::ext(sim) == terra::ext(init)) {
+            # Use intersection of extents
+            common_ext <- terra::intersect(sim, init)
+            
+            sim <- terra::crop(sim, common_ext)
+            init <- terra::crop(init, common_ext)
+        }
+        
+        # Also ensure same resolution and alignment of cells
+        init <- terra::resample(init, sim, method = "bilinear")
+        
+        # Perform subtraction
+        diff <- sim - init
+        diff
     })
     
     # --- Outputs ---
